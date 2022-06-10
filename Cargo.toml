@@ -15,7 +15,10 @@ bevy = { version = "0.7", default-features = false, features = [
 ] }
 
 [dev-dependencies]
-bevy = "0.7"
+bevy = { version = "0.7", default-features = false, features = [
+    "bevy_winit",
+    "x11",
+] }
 
 [[example]]
 name = "cube"

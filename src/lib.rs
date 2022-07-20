@@ -79,7 +79,8 @@ impl PhysicalIndexer {
     }
 
     fn total_indices(&self) -> usize {
-        6 * ((self.sectors - 1) * (self.stacks - 3) + (Self::END_SECTORS - 1)) as usize
+        6 * ((self.sectors - 1) * (self.stacks - 3) - (self.sectors - 9) + (Self::END_SECTORS - 1))
+            as usize
     }
 }
 
@@ -190,24 +191,22 @@ impl From<RoundedBox> for Mesh {
         }
 
         // Generate indices
-        let quarter = physical.sectors / 4;
         for p_stack in 0..physical.stacks - 1 {
             for p_sector in 0..physical.sectors - 1 {
-                let long_edge = p_sector % quarter == quarter - 1;
+                let jj = physical.index(p_sector, p_stack);
+                let jk = physical.index(p_sector, p_stack + 1);
+                let kj = physical.index(p_sector + 1, p_stack);
+                let kk = physical.index(p_sector + 1, p_stack + 1);
                 // Exclude degenerate triangles
-                if p_stack >= 1 || p_stack < physical.stacks - 2 || long_edge {
-                    if p_stack >= 2 || (p_stack == 1 && long_edge) {
-                        indices.push(physical.index(p_sector, p_stack));
-                        indices.push(physical.index(p_sector, p_stack + 1));
-                        indices.push(physical.index(p_sector + 1, p_stack));
-                    }
-                    if p_stack < physical.stacks - 3
-                        || (p_stack == physical.stacks - 3 && long_edge)
-                    {
-                        indices.push(physical.index(p_sector + 1, p_stack));
-                        indices.push(physical.index(p_sector, p_stack + 1));
-                        indices.push(physical.index(p_sector + 1, p_stack + 1));
-                    }
+                if (jj != jk) && (jj != kj) && (jk != kj) {
+                    indices.push(jj);
+                    indices.push(jk);
+                    indices.push(kj);
+                }
+                if (kj != jk) && (kj != kk) && (jk != kk) {
+                    indices.push(kj);
+                    indices.push(jk);
+                    indices.push(kk);
                 }
             }
         }
@@ -229,9 +228,11 @@ impl From<RoundedBox> for Mesh {
 #[test]
 fn test_create_mesh() {
     // Check debug assertions
-    let _ = Mesh::from(RoundedBox {
-        size: Vec3::new(1.0, 1.0, 1.0),
-        radius: 0.1,
-        subdivisions: 3,
-    });
+    for subdivisions in 1..5 {
+        let _ = Mesh::from(RoundedBox {
+            size: Vec3::new(1.0, 1.0, 1.0),
+            radius: 0.1,
+            subdivisions,
+        });
+    }
 }

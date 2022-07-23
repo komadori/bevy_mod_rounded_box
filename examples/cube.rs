@@ -18,7 +18,7 @@ fn main() {
 }
 
 #[derive(Component)]
-struct TheCube();
+struct TheCube;
 
 fn setup(
     mut commands: Commands,
@@ -35,7 +35,7 @@ fn setup(
     let mut tex_data = Vec::with_capacity(tex_extents.width as usize * tex_extents.height as usize);
     for i in 0..256 {
         for j in 0..256 {
-            let value: f32 = if (i / 16) % 2 ^ (j / 16) % 2 == 0 {
+            let value: f32 = if (i / 32) % 2 ^ (j / 32) % 2 == 0 {
                 1.0
             } else {
                 0.0
@@ -52,25 +52,29 @@ fn setup(
 
     // Spawn cube et al.
     commands.spawn_bundle(PbrBundle {
-        mesh: meshes.add(Mesh::from(bevy::prelude::shape::Plane { size: 5.0 })),
+        mesh: meshes.add(Mesh::from(bevy::prelude::shape::Plane { size: 10.0 })),
         material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+        transform: Transform::from_xyz(0.0, -2.0, 0.0),
         ..default()
     });
     commands
         .spawn_bundle(PbrBundle {
             mesh: meshes.add(Mesh::from(RoundedBox {
-                size: Vec3::new(1., 1., 1.),
-                radius: 0.3,
-                subdivisions: 3,
+                size: Vec3::new(2., 2., 2.),
+                radius: 0.4,
+                subdivisions: 4,
+                options: BoxMeshOptions {
+                    generate_uv: true,
+                    generate_face: true,
+                },
             })),
             material: materials.add(StandardMaterial {
                 base_color_texture: Some(images.add(image)),
                 ..Default::default()
             }),
-            transform: Transform::from_xyz(0.0, 1.0, 0.0),
             ..default()
         })
-        .insert(TheCube());
+        .insert(TheCube);
     commands.spawn_bundle(PointLightBundle {
         point_light: PointLight {
             intensity: 1500.0,

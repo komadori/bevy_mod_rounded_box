@@ -61,9 +61,11 @@ struct PhysicalIndexer {
 }
 
 impl PhysicalIndexer {
-    const END_SECTORS: u32 = 4;
+    const ULTIMATE_SECTORS: u32 = 1;
+    const PENULTIMATE_SECTORS: u32 = 4;
+    const TOTAL_END_SECTORS: u32 = Self::ULTIMATE_SECTORS + Self::PENULTIMATE_SECTORS;
     const END_STACKS: u32 = 2;
-    const BOTH_END_STACKS: u32 = 4;
+    const BOTH_END_STACKS: u32 = 2 * Self::END_STACKS;
 
     fn decode_stack(&self, stack: u32) -> (u32, ZHalf) {
         debug_assert!(stack < self.stacks);
@@ -91,8 +93,12 @@ impl PhysicalIndexer {
     fn decode_sector(&self, sector: u32, stack: u32) -> (u32, XYQuarter) {
         let quarter = self.sectors / 4;
         match self.stack_type(stack) {
-            StackType::Ultimate(_) | StackType::Penultimate(_) => {
-                debug_assert!(sector < Self::END_SECTORS);
+            StackType::Ultimate(_) => {
+                debug_assert!(sector == 0);
+                (0, XYQuarter(0))
+            }
+            StackType::Penultimate(_) => {
+                debug_assert!(sector < Self::PENULTIMATE_SECTORS);
                 (sector * (quarter - self.extra_levels), XYQuarter(sector))
             }
             StackType::Ordinary => {
@@ -108,7 +114,8 @@ impl PhysicalIndexer {
 
     fn sectors(&self, stack: u32) -> u32 {
         match self.stack_type(stack) {
-            StackType::Ultimate(_) | StackType::Penultimate(_) => Self::END_SECTORS,
+            StackType::Ultimate(_) => Self::ULTIMATE_SECTORS,
+            StackType::Penultimate(_) => Self::PENULTIMATE_SECTORS,
             StackType::Ordinary => self.sectors,
         }
     }
@@ -121,35 +128,39 @@ impl PhysicalIndexer {
     }
 
     fn index(&self, sector: u32, stack: u32) -> u32 {
-        let quarter = self.sectors / Self::END_SECTORS;
+        let quarter = self.sectors / Self::PENULTIMATE_SECTORS;
         match self.stack_type(stack) {
-            StackType::Ultimate(ZHalf::Top) | StackType::Penultimate(ZHalf::Top) => {
-                stack * Self::END_SECTORS + ((sector / quarter) % Self::END_SECTORS)
-            }
-            StackType::Ultimate(ZHalf::Bottom) | StackType::Penultimate(ZHalf::Bottom) => {
-                let full_stacks = self.stacks - Self::BOTH_END_STACKS;
-                (stack - full_stacks) * Self::END_SECTORS
-                    + full_stacks * self.sectors
-                    + ((sector / quarter) % Self::END_SECTORS)
+            StackType::Ultimate(ZHalf::Top) => 0,
+            StackType::Penultimate(ZHalf::Top) => {
+                Self::ULTIMATE_SECTORS + ((sector / quarter) % Self::PENULTIMATE_SECTORS)
             }
             StackType::Ordinary => {
-                Self::END_STACKS * Self::END_SECTORS
+                Self::TOTAL_END_SECTORS
                     + (stack - Self::END_STACKS) * self.sectors
                     + (sector % self.sectors)
+            }
+            StackType::Penultimate(ZHalf::Bottom) => {
+                Self::TOTAL_END_SECTORS
+                    + (self.stacks - Self::BOTH_END_STACKS) * self.sectors
+                    + ((sector / quarter) % Self::PENULTIMATE_SECTORS)
+            }
+            StackType::Ultimate(ZHalf::Bottom) => {
+                Self::TOTAL_END_SECTORS
+                    + Self::PENULTIMATE_SECTORS
+                    + (self.stacks - Self::BOTH_END_STACKS) * self.sectors
             }
         }
     }
 
     fn total_vertices(&self) -> usize {
-        (self.sectors * (self.stacks - Self::BOTH_END_STACKS)
-            + Self::END_SECTORS * Self::BOTH_END_STACKS) as usize
+        (self.sectors * (self.stacks - Self::BOTH_END_STACKS) + 2 * Self::TOTAL_END_SECTORS)
+            as usize
     }
 
     fn total_indices(&self) -> usize {
-        6 * ((self.sectors - Self::END_SECTORS * (self.extra_levels - 1))
+        6 * ((self.sectors - Self::PENULTIMATE_SECTORS * (self.extra_levels - 1))
             * (self.stacks - (Self::BOTH_END_STACKS - 1) - 2 * (self.extra_levels - 1))
-            - (Self::END_SECTORS * (self.subdivisions - 1))
-            + (Self::END_SECTORS)) as usize
+            - (Self::PENULTIMATE_SECTORS * (self.subdivisions - 1))) as usize
     }
 
     fn face(&self, sector: u32, stack: u32) -> u32 {

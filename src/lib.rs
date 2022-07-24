@@ -189,7 +189,12 @@ impl PhysicalIndexer {
                     } else {
                         Vec2::new(1.0, edge_len)
                     };
-                    let v = xy_quarter.coords()
+                    let unmirror = match face {
+                        0 => Vec2::new(1.0, -1.0),
+                        _ => Vec2::ONE,
+                    };
+                    let v = unmirror
+                        * xy_quarter.coords()
                         * (dist * edge_vec * rounded_length + 0.5 * core_size.truncate());
                     0.5 + (v / (core_size.truncate() + 2.0 * rounded_length))
                 }

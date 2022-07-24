@@ -1,9 +1,6 @@
 use std::f32::consts::TAU;
 
-use bevy::{
-    prelude::*,
-    render::render_resource::{Extent3d, TextureDimension, TextureFormat},
-};
+use bevy::prelude::*;
 
 use bevy_mod_rounded_box::*;
 
@@ -22,34 +19,10 @@ struct TheCube;
 
 fn setup(
     mut commands: Commands,
+    asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut images: ResMut<Assets<Image>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    // Generate draughts board texture
-    let tex_extents = Extent3d {
-        width: 256,
-        height: 256,
-        depth_or_array_layers: 1,
-    };
-    let mut tex_data = Vec::with_capacity(tex_extents.width as usize * tex_extents.height as usize);
-    for i in 0..256 {
-        for j in 0..256 {
-            let value: f32 = if (i / 32) % 2 ^ (j / 32) % 2 == 0 {
-                1.0
-            } else {
-                0.0
-            };
-            tex_data.extend_from_slice(&value.to_ne_bytes())
-        }
-    }
-    let image = Image::new(
-        tex_extents,
-        TextureDimension::D2,
-        tex_data,
-        TextureFormat::R32Float,
-    );
-
     // Spawn cube et al.
     commands.spawn_bundle(PbrBundle {
         mesh: meshes.add(Mesh::from(bevy::prelude::shape::Plane { size: 10.0 })),
@@ -69,7 +42,7 @@ fn setup(
                 },
             })),
             material: materials.add(StandardMaterial {
-                base_color_texture: Some(images.add(image)),
+                base_color_texture: Some(asset_server.load("not_mirrored.png")),
                 ..Default::default()
             }),
             ..default()

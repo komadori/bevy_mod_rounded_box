@@ -20,6 +20,7 @@ bevy = { version = "0.7", default-features = false, features = [
 bevy = { version = "0.7", default-features = false, features = [
     "bevy_winit",
     "x11",
+    "png",
 ] }
 
 [[example]]

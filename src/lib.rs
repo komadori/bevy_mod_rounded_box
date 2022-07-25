@@ -163,6 +163,7 @@ impl PhysicalIndexer {
             - (Self::PENULTIMATE_SECTORS * (self.subdivisions - 1))) as usize
     }
 
+    #[cfg(feature = "uvf")]
     fn face(&self, sector: u32, stack: u32) -> u32 {
         let half_subdivisions = self.subdivisions / 2;
         if stack < Self::END_STACKS + half_subdivisions {
@@ -174,6 +175,7 @@ impl PhysicalIndexer {
         }
     }
 
+    #[cfg(feature = "uvf")]
     fn uv_coords(&self, rounded_length: f32, core_size: Vec3, sector: u32, stack: u32) -> Vec2 {
         let half_subdivisions = self.subdivisions / 2;
         let (logical_sector, xy_quarter) = self.decode_sector(sector, stack);
@@ -250,22 +252,36 @@ pub const ATTRIBUTE_FACE: MeshVertexAttribute =
 #[derive(Copy, Clone, Debug, Default)]
 pub struct BoxMeshOptions {
     // Generate ATTRIBUTE_UV_0
+    #[cfg(feature = "uvf")]
     pub generate_uv: bool,
     // Generate ATTRIBUTE_FACE
+    #[cfg(feature = "uvf")]
     pub generate_face: bool,
 }
 
 impl BoxMeshOptions {
+    #[cfg(feature = "uvf")]
     fn is_generate_uv(&self) -> bool {
         self.generate_uv
     }
 
+    #[cfg(feature = "uvf")]
     fn is_generate_face(&self) -> bool {
         self.generate_face
     }
 
+    #[cfg(not(feature = "uvf"))]
+    fn is_generate_uv(&self) -> bool {
+        false
+    }
+
+    #[cfg(not(feature = "uvf"))]
+    fn is_generate_face(&self) -> bool {
+        false
+    }
+
     fn is_split_faces(&self) -> bool {
-        self.generate_uv || self.generate_face
+        self.is_generate_uv() || self.is_generate_face()
     }
 }
 
@@ -309,7 +325,9 @@ impl From<RoundedBox> for Mesh {
 
         let mut positions: Vec<[f32; 3]> = Vec::with_capacity(physical.total_vertices());
         let mut normals: Vec<[f32; 3]> = Vec::with_capacity(physical.total_vertices());
+        #[cfg(feature = "uvf")]
         let mut uvs: Vec<[f32; 2]> = Vec::with_capacity(physical.total_vertices());
+        #[cfg(feature = "uvf")]
         let mut faces: Vec<u32> = Vec::with_capacity(physical.total_vertices());
         let mut indices: Vec<u32> = Vec::with_capacity(physical.total_indices());
 
@@ -344,6 +362,7 @@ impl From<RoundedBox> for Mesh {
                 positions.push(pos_xy.extend(pos_z).to_array());
 
                 // Calculate texture coordinates
+                #[cfg(feature = "uvf")]
                 if rbox.options.is_generate_uv() {
                     uvs.push(
                         physical
@@ -353,6 +372,7 @@ impl From<RoundedBox> for Mesh {
                 }
 
                 // Calculate face index
+                #[cfg(feature = "uvf")]
                 if rbox.options.is_generate_face() {
                     faces.push(physical.face(p_sector, p_stack));
                 }
@@ -403,10 +423,12 @@ impl From<RoundedBox> for Mesh {
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
         debug_assert_eq!(normals.len(), physical.total_vertices());
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
+        #[cfg(feature = "uvf")]
         if rbox.options.generate_uv {
             debug_assert_eq!(uvs.len(), physical.total_vertices());
             mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
         }
+        #[cfg(feature = "uvf")]
         if rbox.options.generate_face {
             debug_assert_eq!(faces.len(), physical.total_vertices());
             mesh.insert_attribute(ATTRIBUTE_FACE, faces);
@@ -415,26 +437,42 @@ impl From<RoundedBox> for Mesh {
     }
 }
 
-#[test]
-fn test_create_mesh() {
-    // Check debug assertions
-    for subdivisions in 1..=10 {
-        for uvf in [false, true] {
-            println!("subdivions={} uvf={}", subdivisions, uvf);
-            let mesh = Mesh::from(RoundedBox {
-                size: Vec3::new(1.0, 1.0, 1.0),
-                radius: 0.1,
-                subdivisions,
-                options: BoxMeshOptions {
-                    generate_uv: uvf,
-                    generate_face: uvf,
-                },
-            });
-            println!(
-                "indices={} vertices={}",
-                mesh.indices().unwrap().len(),
-                mesh.count_vertices()
-            )
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[cfg(feature = "uvf")]
+    const MESH_OPTIONS: [BoxMeshOptions; 2] = [
+        BoxMeshOptions {
+            generate_uv: false,
+            generate_face: false,
+        },
+        BoxMeshOptions {
+            generate_uv: true,
+            generate_face: true,
+        },
+    ];
+    #[cfg(not(feature = "uvf"))]
+    const MESH_OPTIONS: [BoxMeshOptions; 1] = [BoxMeshOptions { }];
+
+    #[test]
+    fn test_create_mesh() {
+        // Check debug assertions
+        for subdivisions in 1..=10 {
+            for options in MESH_OPTIONS {
+                println!("subdivions={} options={:?}", subdivisions, options);
+                let mesh = Mesh::from(RoundedBox {
+                    size: Vec3::new(1.0, 1.0, 1.0),
+                    radius: 0.1,
+                    subdivisions,
+                    options,
+                });
+                println!(
+                    "indices={} vertices={}",
+                    mesh.indices().unwrap().len(),
+                    mesh.count_vertices()
+                )
+            }
         }
     }
 }

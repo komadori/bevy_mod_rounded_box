@@ -321,15 +321,23 @@ impl From<RoundedBox> for Mesh {
         let core_offset = core_size / 2.0;
         let sector_step = TAU / logical_sectors as f32;
         let stack_step = PI / logical_stacks as f32;
+        #[cfg(feature = "uvf")]
         let rounded_length = 0.125 * TAU * rbox.radius;
 
         let mut positions: Vec<[f32; 3]> = Vec::with_capacity(physical.total_vertices());
         let mut normals: Vec<[f32; 3]> = Vec::with_capacity(physical.total_vertices());
         #[cfg(feature = "uvf")]
-        let mut uvs: Vec<[f32; 2]> = Vec::with_capacity(physical.total_vertices());
+        let mut uvs: Vec<[f32; 2]> = Vec::with_capacity(if rbox.options.is_generate_uv() {
+            physical.total_vertices()
+        } else {
+            0
+        });
         #[cfg(feature = "uvf")]
-        let mut faces: Vec<u32> = Vec::with_capacity(physical.total_vertices());
-        let mut indices: Vec<u32> = Vec::with_capacity(physical.total_indices());
+        let mut faces: Vec<u32> = Vec::with_capacity(if rbox.options.is_generate_face() {
+            physical.total_vertices()
+        } else {
+            0
+        });
 
         // Generate vertices
         for p_stack in 0..physical.stacks {
@@ -380,6 +388,7 @@ impl From<RoundedBox> for Mesh {
         }
 
         // Generate indices
+        let mut indices: Vec<u32> = Vec::with_capacity(physical.total_indices());
         for p_stack in 0..physical.stacks - 1 {
             for p_sector in 0..physical.sectors {
                 // Skip degenerate triangles between split faces
@@ -453,7 +462,7 @@ mod tests {
         },
     ];
     #[cfg(not(feature = "uvf"))]
-    const MESH_OPTIONS: [BoxMeshOptions; 1] = [BoxMeshOptions { }];
+    const MESH_OPTIONS: [BoxMeshOptions; 1] = [BoxMeshOptions {}];
 
     #[test]
     fn test_create_mesh() {

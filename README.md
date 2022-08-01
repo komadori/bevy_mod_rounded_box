@@ -6,7 +6,7 @@ This crate provides a rounded box shape for Bevy.
 
 ```toml
 [dependencies]
-bevy_mod_rounded_box = "0.1"
+bevy_mod_rounded_box = "0.2"
 ```
 
 ## Example
@@ -22,7 +22,4 @@ cargo run --example cube
 | This Version | Bevy version |
 |--------------|--------------|
 | 0.1.x        | 0.7.x        |
-
-## Known Issues
-
-The U texture coordinate is distorted.
+| 0.2.x        | 0.8.x        |

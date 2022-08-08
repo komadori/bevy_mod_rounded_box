@@ -1,6 +1,6 @@
 use std::f32::consts::TAU;
 
-use bevy::prelude::*;
+use bevy::{prelude::*, render::mesh::VertexAttributeValues};
 
 use bevy_mod_rounded_box::*;
 
@@ -24,6 +24,31 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
+    // Generate mesh
+    let mut mesh = Mesh::from(RoundedBox {
+        size: Vec3::new(2., 2., 2.),
+        radius: 0.4,
+        subdivisions: 4,
+        options: BoxMeshOptions::DEFAULT.with_uv().with_face(),
+    });
+
+    // Remap faces to colours
+    if let Some(VertexAttributeValues::Uint32(faces)) = mesh.remove_attribute(ATTRIBUTE_FACE) {
+        const COLOUR_MAP: [[f32; 4]; 6] = [
+            [1.0, 0.0, 0.0, 1.0],
+            [0.0, 1.0, 0.0, 1.0],
+            [0.0, 0.0, 1.0, 1.0],
+            [1.0, 0.4, 0.4, 1.0],
+            [0.4, 1.0, 0.4, 1.0],
+            [0.4, 0.4, 1.0, 1.0],
+        ];
+        let mut colours = Vec::with_capacity(faces.len());
+        for face in faces {
+            colours.push(COLOUR_MAP[face as usize]);
+        }
+        mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colours);
+    }
+
     // Spawn cube et al.
     commands.spawn_bundle(PbrBundle {
         mesh: meshes.add(Mesh::from(bevy::prelude::shape::Plane { size: 10.0 })),
@@ -33,15 +58,7 @@ fn setup(
     });
     commands
         .spawn_bundle(PbrBundle {
-            mesh: meshes.add(Mesh::from(RoundedBox {
-                size: Vec3::new(2., 2., 2.),
-                radius: 0.4,
-                subdivisions: 4,
-                options: BoxMeshOptions {
-                    generate_uv: true,
-                    generate_face: true,
-                },
-            })),
+            mesh: meshes.add(mesh),
             material: materials.add(StandardMaterial {
                 base_color_texture: Some(asset_server.load("not_mirrored.png")),
                 ..Default::default()

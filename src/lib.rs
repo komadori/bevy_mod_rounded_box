@@ -245,21 +245,48 @@ impl PhysicalIndexer {
     }
 }
 
+/// The index of the box face the vertex belongs to.
+///
+/// The +Z and -Z faces are numbered 0 and 5. The faces on the sides are numbered 1 to 4.
 pub const ATTRIBUTE_FACE: MeshVertexAttribute =
     MeshVertexAttribute::new("Face", 15543717107074212298, VertexFormat::Uint32);
 
 /// Options for generating the mesh of a [`RoundedBox`](RoundedBox)
 #[derive(Copy, Clone, Debug, Default)]
 pub struct BoxMeshOptions {
-    // Generate ATTRIBUTE_UV_0
     #[cfg(feature = "uvf")]
-    pub generate_uv: bool,
-    // Generate ATTRIBUTE_FACE
+    generate_uv: bool,
     #[cfg(feature = "uvf")]
-    pub generate_face: bool,
+    generate_face: bool,
 }
 
 impl BoxMeshOptions {
+    /// Default mesh options.
+    pub const DEFAULT: Self = BoxMeshOptions {
+        #[cfg(feature = "uvf")]
+        generate_uv: false,
+        #[cfg(feature = "uvf")]
+        generate_face: false,
+    };
+
+    /// Enable generating [`Mesh::ATTRIBUTE_UV_0`].
+    #[cfg(feature = "uvf")]
+    pub const fn with_uv(self) -> Self {
+        BoxMeshOptions {
+            generate_uv: true,
+            ..self
+        }
+    }
+
+    /// Enable generating [`ATTRIBUTE_FACE`](crate::ATTRIBUTE_FACE).
+    #[cfg(feature = "uvf")]
+    pub const fn with_face(self) -> Self {
+        BoxMeshOptions {
+            generate_face: true,
+            ..self
+        }
+    }
+
     #[cfg(feature = "uvf")]
     fn is_generate_uv(&self) -> bool {
         self.generate_uv
@@ -452,17 +479,11 @@ mod tests {
 
     #[cfg(feature = "uvf")]
     const MESH_OPTIONS: [BoxMeshOptions; 2] = [
-        BoxMeshOptions {
-            generate_uv: false,
-            generate_face: false,
-        },
-        BoxMeshOptions {
-            generate_uv: true,
-            generate_face: true,
-        },
+        BoxMeshOptions::DEFAULT,
+        BoxMeshOptions::DEFAULT.with_uv().with_face(),
     ];
     #[cfg(not(feature = "uvf"))]
-    const MESH_OPTIONS: [BoxMeshOptions; 1] = [BoxMeshOptions {}];
+    const MESH_OPTIONS: [BoxMeshOptions; 1] = [BoxMeshOptions::DEFAULT];
 
     #[test]
     fn test_create_mesh() {

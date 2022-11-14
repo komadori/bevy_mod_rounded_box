@@ -50,14 +50,14 @@ fn setup(
     }
 
     // Spawn cube et al.
-    commands.spawn_bundle(PbrBundle {
+    commands.spawn(PbrBundle {
         mesh: meshes.add(Mesh::from(bevy::prelude::shape::Plane { size: 10.0 })),
         material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
         transform: Transform::from_xyz(0.0, -2.0, 0.0),
         ..default()
     });
     commands
-        .spawn_bundle(PbrBundle {
+        .spawn(PbrBundle {
             mesh: meshes.add(mesh),
             material: materials.add(StandardMaterial {
                 base_color_texture: Some(asset_server.load("not_mirrored.png")),
@@ -66,7 +66,7 @@ fn setup(
             ..default()
         })
         .insert(TheCube);
-    commands.spawn_bundle(PointLightBundle {
+    commands.spawn(PointLightBundle {
         point_light: PointLight {
             intensity: 1500.0,
             shadows_enabled: true,
@@ -75,7 +75,7 @@ fn setup(
         transform: Transform::from_xyz(4.0, 8.0, 4.0),
         ..default()
     });
-    commands.spawn_bundle(Camera3dBundle {
+    commands.spawn(Camera3dBundle {
         transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
     });

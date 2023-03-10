@@ -1,6 +1,6 @@
 [package]
 name = "bevy_mod_rounded_box"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Robin KAY <komadori@gekkou.co.uk>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -12,9 +12,9 @@ keywords = ["gamedev", "bevy", "rounded", "box", "cube"]
 categories = ["game-engines", "rendering"]
 
 [dependencies]
-bevy = { version = "0.9", default-features = false, features = [
+bevy = { version = "0.10", default-features = false, features = [
     "bevy_asset",
-    "render",
+    "bevy_render",
 ] }
 
 [features]
@@ -22,7 +22,9 @@ uvf = []
 default = ["uvf"]
 
 [dev-dependencies]
-bevy = { version = "0.9", default-features = false, features = [
+bevy = { version = "0.10", default-features = false, features = [
+    "bevy_core_pipeline",
+    "bevy_pbr",
     "bevy_winit",
     "x11",
     "png",

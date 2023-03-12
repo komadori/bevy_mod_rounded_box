@@ -476,6 +476,7 @@ impl From<RoundedBox> for Mesh {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::HashSet;
 
     #[cfg(feature = "uvf")]
     const MESH_OPTIONS: [BoxMeshOptions; 2] = [
@@ -501,8 +502,52 @@ mod tests {
                     "indices={} vertices={}",
                     mesh.indices().unwrap().len(),
                     mesh.count_vertices()
-                )
+                );
+                assert_eq!(mesh.primitive_topology(), PrimitiveTopology::TriangleList);
+                assert_no_degenerates(&mesh);
+                assert_no_duplicates(&mesh);
             }
+        }
+    }
+
+    fn assert_no_degenerates(mesh: &Mesh) {
+        let pos = mesh
+            .attribute(Mesh::ATTRIBUTE_POSITION)
+            .unwrap()
+            .as_float3()
+            .unwrap();
+        let indices = mesh.indices().unwrap();
+        let mut it = indices.iter();
+        while let (Some(a), Some(b), Some(c)) = (it.next(), it.next(), it.next()) {
+            assert_ne!(pos[a], pos[b]);
+            assert_ne!(pos[b], pos[c]);
+            assert_ne!(pos[c], pos[a]);
+        }
+    }
+
+    fn assert_no_duplicates(mesh: &Mesh) {
+        let pos = mesh
+            .attribute(Mesh::ATTRIBUTE_POSITION)
+            .unwrap()
+            .as_float3()
+            .unwrap();
+        let mut set = HashSet::<[[u32; 3]; 3]>::new();
+        let indices = mesh.indices().unwrap();
+        let mut it = indices.iter();
+        while let (Some(a), Some(b), Some(c)) = (it.next(), it.next(), it.next()) {
+            let [ax, ay, az] = pos[a];
+            let [bx, by, bz] = pos[b];
+            let [cx, cy, cz] = pos[c];
+            let mut ps = [
+                [ax.to_bits(), ay.to_bits(), az.to_bits()],
+                [bx.to_bits(), by.to_bits(), bz.to_bits()],
+                [cx.to_bits(), cy.to_bits(), cz.to_bits()],
+            ];
+            assert_eq!(set.insert(ps.clone()), true);
+            ps.rotate_left(1);
+            assert_eq!(set.insert(ps.clone()), true);
+            ps.rotate_left(1);
+            assert_eq!(set.insert(ps.clone()), true);
         }
     }
 }

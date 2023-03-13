@@ -3,6 +3,8 @@
 [![crates.io](https://img.shields.io/crates/v/bevy_mod_rounded_box.svg)](https://crates.io/crates/bevy_mod_rounded_box)
 [![docs](https://docs.rs/bevy_mod_rounded_box/badge.svg)](https://docs.rs/bevy_mod_rounded_box)
 
+![Screenshot of bevy_mod_rounded_box's cube example](https://github.com/bevyengine/bevy-assets/blob/main/Assets/Shapes/bevy_mod_rounded_box.png?raw=true)
+
 This crate provides a rounded box shape for Bevy.
 
 ## Dependency

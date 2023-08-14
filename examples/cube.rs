@@ -12,9 +12,9 @@ fn main() {
     App::new()
         .insert_resource(Msaa::Sample4)
         .add_plugins(DefaultPlugins)
-        .add_startup_system(setup)
-        .add_system(bevy::window::close_on_esc)
-        .add_system(rotate_cube)
+        .add_systems(Startup, setup)
+        .add_systems(Update, bevy::window::close_on_esc)
+        .add_systems(Update, rotate_cube)
         .run();
 }
 

@@ -249,7 +249,7 @@ impl PhysicalIndexer {
 ///
 /// The +Z and -Z faces are numbered 0 and 5. The faces on the sides are numbered 1 to 4.
 pub const ATTRIBUTE_FACE: MeshVertexAttribute =
-    MeshVertexAttribute::new("Face", 15543717107074212298, VertexFormat::Uint32);
+    MeshVertexAttribute::new("Face", 1554371710, VertexFormat::Uint32);
 
 /// Options for generating the mesh of a [`RoundedBox`](RoundedBox)
 #[derive(Copy, Clone, Debug, Default)]

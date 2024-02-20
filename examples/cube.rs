@@ -1,9 +1,6 @@
 use std::f32::consts::TAU;
 
-use bevy::{
-    prelude::{shape::Plane, *},
-    render::mesh::VertexAttributeValues,
-};
+use bevy::{prelude::*, render::mesh::VertexAttributeValues};
 
 use bevy_mod_rounded_box::*;
 
@@ -54,11 +51,8 @@ fn setup(
 
     // Spawn cube et al.
     commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(Plane {
-            size: 10.0,
-            subdivisions: 0,
-        })),
-        material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+        mesh: meshes.add(Plane3d::default().mesh().size(10.0, 10.0)),
+        material: materials.add(Color::rgb(0.3, 0.5, 0.3)),
         transform: Transform::from_xyz(0.0, -2.0, 0.0),
         ..default()
     });

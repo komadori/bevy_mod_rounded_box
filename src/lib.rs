@@ -4,6 +4,7 @@ use bevy::{
     prelude::*,
     render::{
         mesh::{Indices, MeshVertexAttribute, PrimitiveTopology},
+        render_asset::RenderAssetUsages,
         render_resource::VertexFormat,
     },
 };
@@ -452,9 +453,12 @@ impl From<RoundedBox> for Mesh {
             }
         }
 
-        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+        let mut mesh = Mesh::new(
+            PrimitiveTopology::TriangleList,
+            RenderAssetUsages::default(),
+        );
         debug_assert_eq!(indices.len(), physical.total_indices());
-        mesh.set_indices(Some(Indices::U32(indices)));
+        mesh.insert_indices(Indices::U32(indices));
         debug_assert_eq!(positions.len(), physical.total_vertices());
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
         debug_assert_eq!(normals.len(), physical.total_vertices());

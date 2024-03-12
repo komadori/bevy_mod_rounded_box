@@ -252,60 +252,62 @@ impl PhysicalIndexer {
 pub const ATTRIBUTE_FACE: MeshVertexAttribute =
     MeshVertexAttribute::new("Face", 1554371710, VertexFormat::Uint32);
 
-/// Options for generating the mesh of a [`RoundedBox`](RoundedBox)
+/// Options for generating the mesh of a [`RoundedBox`]
 #[derive(Copy, Clone, Debug, Default)]
-pub struct BoxMeshOptions {
+pub struct RoundedBoxMeshOptions {
     #[cfg(feature = "uvf")]
     generate_uv: bool,
     #[cfg(feature = "uvf")]
     generate_face: bool,
 }
 
-impl BoxMeshOptions {
+impl RoundedBoxMeshOptions {
     /// Default mesh options.
-    pub const DEFAULT: Self = BoxMeshOptions {
+    pub const DEFAULT: Self = RoundedBoxMeshOptions {
         #[cfg(feature = "uvf")]
         generate_uv: false,
         #[cfg(feature = "uvf")]
         generate_face: false,
     };
 
-    /// Enable generating [`Mesh::ATTRIBUTE_UV_0`].
+    /// Enable generating [`Mesh::ATTRIBUTE_UV_0`]. Requires `uvf` feature.
     #[cfg(feature = "uvf")]
     pub const fn with_uv(self) -> Self {
-        BoxMeshOptions {
+        RoundedBoxMeshOptions {
             generate_uv: true,
             ..self
         }
     }
 
-    /// Enable generating [`ATTRIBUTE_FACE`](crate::ATTRIBUTE_FACE).
+    /// Enable generating [`ATTRIBUTE_FACE`]. Requires `uvf` feature.
     #[cfg(feature = "uvf")]
     pub const fn with_face(self) -> Self {
-        BoxMeshOptions {
+        RoundedBoxMeshOptions {
             generate_face: true,
             ..self
         }
     }
 
-    #[cfg(feature = "uvf")]
     fn is_generate_uv(&self) -> bool {
-        self.generate_uv
+        #[cfg(feature = "uvf")]
+        {
+            self.generate_uv
+        }
+        #[cfg(not(feature = "uvf"))]
+        {
+            false
+        }
     }
 
-    #[cfg(feature = "uvf")]
     fn is_generate_face(&self) -> bool {
-        self.generate_face
-    }
-
-    #[cfg(not(feature = "uvf"))]
-    fn is_generate_uv(&self) -> bool {
-        false
-    }
-
-    #[cfg(not(feature = "uvf"))]
-    fn is_generate_face(&self) -> bool {
-        false
+        #[cfg(feature = "uvf")]
+        {
+            self.generate_face
+        }
+        #[cfg(not(feature = "uvf"))]
+        {
+            false
+        }
     }
 
     fn is_split_faces(&self) -> bool {
@@ -316,28 +318,101 @@ impl BoxMeshOptions {
 /// A rounded box.
 #[derive(Copy, Clone, Debug)]
 pub struct RoundedBox {
-    /// The dimensions of the box
+    /// The dimensions of the box.
     pub size: Vec3,
-    /// The radius of the corners and edges
+    /// The radius of the corners and edges.
     pub radius: f32,
-    /// The number of sectors and stacks in each corner
-    pub subdivisions: usize,
-    /// Mesh generation options
-    pub options: BoxMeshOptions,
+}
+
+impl Default for RoundedBox {
+    fn default() -> Self {
+        Self {
+            size: Vec3::ONE,
+            radius: 0.1,
+        }
+    }
+}
+
+impl Meshable for RoundedBox {
+    type Output = RoundedBoxMeshBuilder;
+
+    fn mesh(&self) -> Self::Output {
+        RoundedBoxMeshBuilder {
+            rounded_box: *self,
+            subdivisions: 4,
+            options: RoundedBoxMeshOptions::DEFAULT,
+        }
+    }
 }
 
 impl From<RoundedBox> for Mesh {
+    fn from(value: RoundedBox) -> Self {
+        value.mesh().build()
+    }
+}
+
+/// A builder used for creating a [`Mesh`] with a [`RoundedBox`] shape.
+#[derive(Copy, Clone, Debug)]
+pub struct RoundedBoxMeshBuilder {
+    /// The [`RoundedBox`] shape.
+    pub rounded_box: RoundedBox,
+    /// The number of sectors and stacks in each corner.
+    pub subdivisions: usize,
+    /// Mesh generation options.
+    pub options: RoundedBoxMeshOptions,
+}
+
+impl Default for RoundedBoxMeshBuilder {
+    fn default() -> Self {
+        RoundedBox::default().mesh()
+    }
+}
+
+impl From<RoundedBoxMeshBuilder> for Mesh {
+    fn from(value: RoundedBoxMeshBuilder) -> Self {
+        value.build()
+    }
+}
+
+impl RoundedBoxMeshBuilder {
+    /// Sets the number of subdivisions.
+    pub const fn with_subdivisions(self, subdivisions: usize) -> Self {
+        RoundedBoxMeshBuilder {
+            subdivisions,
+            ..self
+        }
+    }
+
+    /// Sets the mesh generation options.
+    pub const fn with_options(self, options: RoundedBoxMeshOptions) -> Self {
+        RoundedBoxMeshBuilder { options, ..self }
+    }
+
+    /// Enable generating [`Mesh::ATTRIBUTE_UV_0`]. Requires `uvf` feature.
+    #[cfg(feature = "uvf")]
+    pub const fn with_uv(mut self) -> Self {
+        self.options = self.options.with_uv();
+        self
+    }
+
+    /// Enable generating [`ATTRIBUTE_FACE`]. Requires `uvf` feature.
+    #[cfg(feature = "uvf")]
+    pub const fn with_face(mut self) -> Self {
+        self.options = self.options.with_face();
+        self
+    }
+
     // Based on bevy_render::mesh::shape::UVSphere
-    fn from(rbox: RoundedBox) -> Self {
-        debug_assert!(rbox.subdivisions > 0);
-        let subdivisions = if rbox.options.is_split_faces() {
-            rbox.subdivisions + rbox.subdivisions % 2
+    pub fn build(&self) -> Mesh {
+        debug_assert!(self.subdivisions > 0);
+        let subdivisions = if self.options.is_split_faces() {
+            self.subdivisions + self.subdivisions % 2
         } else {
-            rbox.subdivisions
+            self.subdivisions
         } as u32;
         let logical_sectors = 4 * subdivisions;
         let logical_stacks = 2 * subdivisions;
-        let extra_levels = if rbox.options.is_split_faces() { 2 } else { 1 };
+        let extra_levels = if self.options.is_split_faces() { 2 } else { 1 };
         let physical = PhysicalIndexer {
             subdivisions,
             extra_levels,
@@ -345,23 +420,23 @@ impl From<RoundedBox> for Mesh {
             stacks: (logical_stacks + 2 + 2 * extra_levels),
         };
 
-        let core_size = rbox.size - 2.0 * rbox.radius;
+        let core_size = self.rounded_box.size - 2.0 * self.rounded_box.radius;
         let core_offset = core_size / 2.0;
         let sector_step = TAU / logical_sectors as f32;
         let stack_step = PI / logical_stacks as f32;
         #[cfg(feature = "uvf")]
-        let rounded_length = 0.125 * TAU * rbox.radius;
+        let rounded_length = 0.125 * TAU * self.rounded_box.radius;
 
         let mut positions: Vec<[f32; 3]> = Vec::with_capacity(physical.total_vertices());
         let mut normals: Vec<[f32; 3]> = Vec::with_capacity(physical.total_vertices());
         #[cfg(feature = "uvf")]
-        let mut uvs: Vec<[f32; 2]> = Vec::with_capacity(if rbox.options.is_generate_uv() {
+        let mut uvs: Vec<[f32; 2]> = Vec::with_capacity(if self.options.is_generate_uv() {
             physical.total_vertices()
         } else {
             0
         });
         #[cfg(feature = "uvf")]
-        let mut faces: Vec<u32> = Vec::with_capacity(if rbox.options.is_generate_face() {
+        let mut faces: Vec<u32> = Vec::with_capacity(if self.options.is_generate_face() {
             physical.total_vertices()
         } else {
             0
@@ -377,7 +452,7 @@ impl From<RoundedBox> for Mesh {
             let normal_z = stack_angle.sin();
 
             // Calculate Z coordinate
-            let pos_z = rbox.radius * normal_z + core_offset.z * z_half.coord();
+            let pos_z = self.rounded_box.radius * normal_z + core_offset.z * z_half.coord();
             let stretch_xy = if physical.stretch_xy(p_stack) {
                 1.0
             } else {
@@ -393,13 +468,13 @@ impl From<RoundedBox> for Mesh {
                 normals.push(normal_xy.extend(normal_z).to_array());
 
                 // Calculate X and Y coordinates
-                let pos_xy = rbox.radius * normal_xy
+                let pos_xy = self.rounded_box.radius * normal_xy
                     + stretch_xy * core_offset.truncate() * xy_quarter.coords();
                 positions.push(pos_xy.extend(pos_z).to_array());
 
                 // Calculate texture coordinates
                 #[cfg(feature = "uvf")]
-                if rbox.options.is_generate_uv() {
+                if self.options.is_generate_uv() {
                     uvs.push(
                         physical
                             .uv_coords(rounded_length, core_size, p_sector, p_stack)
@@ -409,7 +484,7 @@ impl From<RoundedBox> for Mesh {
 
                 // Calculate face index
                 #[cfg(feature = "uvf")]
-                if rbox.options.is_generate_face() {
+                if self.options.is_generate_face() {
                     faces.push(physical.face(p_sector, p_stack));
                 }
             }
@@ -420,7 +495,7 @@ impl From<RoundedBox> for Mesh {
         for p_stack in 0..physical.stacks - 1 {
             for p_sector in 0..physical.sectors {
                 // Skip degenerate triangles between split faces
-                if rbox.options.is_split_faces() {
+                if self.options.is_split_faces() {
                     if p_stack == PhysicalIndexer::END_STACKS + subdivisions / 2 - 1
                         || p_stack
                             == physical.stacks - PhysicalIndexer::END_STACKS - subdivisions / 2 - 1
@@ -464,12 +539,12 @@ impl From<RoundedBox> for Mesh {
         debug_assert_eq!(normals.len(), physical.total_vertices());
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
         #[cfg(feature = "uvf")]
-        if rbox.options.generate_uv {
+        if self.options.generate_uv {
             debug_assert_eq!(uvs.len(), physical.total_vertices());
             mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
         }
         #[cfg(feature = "uvf")]
-        if rbox.options.generate_face {
+        if self.options.generate_face {
             debug_assert_eq!(faces.len(), physical.total_vertices());
             mesh.insert_attribute(ATTRIBUTE_FACE, faces);
         }
@@ -483,12 +558,12 @@ mod tests {
     use std::collections::HashSet;
 
     #[cfg(feature = "uvf")]
-    const MESH_OPTIONS: [BoxMeshOptions; 2] = [
-        BoxMeshOptions::DEFAULT,
-        BoxMeshOptions::DEFAULT.with_uv().with_face(),
+    const MESH_OPTIONS: [RoundedBoxMeshOptions; 2] = [
+        RoundedBoxMeshOptions::DEFAULT,
+        RoundedBoxMeshOptions::DEFAULT.with_uv().with_face(),
     ];
     #[cfg(not(feature = "uvf"))]
-    const MESH_OPTIONS: [BoxMeshOptions; 1] = [BoxMeshOptions::DEFAULT];
+    const MESH_OPTIONS: [RoundedBoxMeshOptions; 1] = [RoundedBoxMeshOptions::DEFAULT];
 
     #[test]
     fn test_create_mesh() {
@@ -496,12 +571,14 @@ mod tests {
         for subdivisions in 1..=10 {
             for options in MESH_OPTIONS {
                 println!("subdivions={} options={:?}", subdivisions, options);
-                let mesh = Mesh::from(RoundedBox {
+                let mesh = RoundedBox {
                     size: Vec3::new(1.0, 1.0, 1.0),
                     radius: 0.1,
-                    subdivisions,
-                    options,
-                });
+                }
+                .mesh()
+                .with_subdivisions(subdivisions)
+                .with_options(options)
+                .build();
                 println!(
                     "indices={} vertices={}",
                     mesh.indices().unwrap().len(),

@@ -25,12 +25,14 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     // Generate mesh
-    let mut mesh = Mesh::from(RoundedBox {
+    let mut mesh = RoundedBox {
         size: Vec3::new(2., 2., 2.),
         radius: 0.4,
-        subdivisions: 4,
-        options: BoxMeshOptions::DEFAULT.with_uv().with_face(),
-    });
+    }
+    .mesh()
+    .with_face()
+    .with_uv()
+    .build();
 
     // Remap faces to colours
     if let Some(VertexAttributeValues::Uint32(faces)) = mesh.remove_attribute(ATTRIBUTE_FACE) {

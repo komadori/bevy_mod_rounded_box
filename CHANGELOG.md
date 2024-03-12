@@ -1,5 +1,11 @@
 # Changelog
 
+## bevy_mod_rounded_box 0.7.0 (2024-03-12)
+
+### Changed
+- Updated Bevy dependency to 0.13.
+- Changed API to match bevy::math::primitives.
+
 ## bevy_mod_rounded_box 0.6.0 (2023-11-10)
 
 ### Changed

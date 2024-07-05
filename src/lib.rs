@@ -368,42 +368,9 @@ impl Default for RoundedBoxMeshBuilder {
     }
 }
 
-impl From<RoundedBoxMeshBuilder> for Mesh {
-    fn from(value: RoundedBoxMeshBuilder) -> Self {
-        value.build()
-    }
-}
-
-impl RoundedBoxMeshBuilder {
-    /// Sets the number of subdivisions.
-    pub const fn with_subdivisions(self, subdivisions: usize) -> Self {
-        RoundedBoxMeshBuilder {
-            subdivisions,
-            ..self
-        }
-    }
-
-    /// Sets the mesh generation options.
-    pub const fn with_options(self, options: RoundedBoxMeshOptions) -> Self {
-        RoundedBoxMeshBuilder { options, ..self }
-    }
-
-    /// Enable generating [`Mesh::ATTRIBUTE_UV_0`]. Requires `uvf` feature.
-    #[cfg(feature = "uvf")]
-    pub const fn with_uv(mut self) -> Self {
-        self.options = self.options.with_uv();
-        self
-    }
-
-    /// Enable generating [`ATTRIBUTE_FACE`]. Requires `uvf` feature.
-    #[cfg(feature = "uvf")]
-    pub const fn with_face(mut self) -> Self {
-        self.options = self.options.with_face();
-        self
-    }
-
+impl MeshBuilder for RoundedBoxMeshBuilder {
     // Based on bevy_render::mesh::shape::UVSphere
-    pub fn build(&self) -> Mesh {
+    fn build(&self) -> Mesh {
         debug_assert!(self.subdivisions > 0);
         let subdivisions = if self.options.is_split_faces() {
             self.subdivisions + self.subdivisions % 2
@@ -549,6 +516,35 @@ impl RoundedBoxMeshBuilder {
             mesh.insert_attribute(ATTRIBUTE_FACE, faces);
         }
         mesh
+    }
+}
+
+impl RoundedBoxMeshBuilder {
+    /// Sets the number of subdivisions.
+    pub const fn with_subdivisions(self, subdivisions: usize) -> Self {
+        RoundedBoxMeshBuilder {
+            subdivisions,
+            ..self
+        }
+    }
+
+    /// Sets the mesh generation options.
+    pub const fn with_options(self, options: RoundedBoxMeshOptions) -> Self {
+        RoundedBoxMeshBuilder { options, ..self }
+    }
+
+    /// Enable generating [`Mesh::ATTRIBUTE_UV_0`]. Requires `uvf` feature.
+    #[cfg(feature = "uvf")]
+    pub const fn with_uv(mut self) -> Self {
+        self.options = self.options.with_uv();
+        self
+    }
+
+    /// Enable generating [`ATTRIBUTE_FACE`]. Requires `uvf` feature.
+    #[cfg(feature = "uvf")]
+    pub const fn with_face(mut self) -> Self {
+        self.options = self.options.with_face();
+        self
     }
 }
 

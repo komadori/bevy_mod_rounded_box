@@ -10,7 +10,6 @@ fn main() {
         .insert_resource(Msaa::Sample4)
         .add_plugins(DefaultPlugins)
         .add_systems(Startup, setup)
-        .add_systems(Update, bevy::window::close_on_esc)
         .add_systems(Update, rotate_cube)
         .run();
 }
@@ -54,7 +53,7 @@ fn setup(
     // Spawn cube et al.
     commands.spawn(PbrBundle {
         mesh: meshes.add(Plane3d::default().mesh().size(10.0, 10.0)),
-        material: materials.add(Color::rgb(0.3, 0.5, 0.3)),
+        material: materials.add(Color::srgb(0.3, 0.5, 0.3)),
         transform: Transform::from_xyz(0.0, -2.0, 0.0),
         ..default()
     });

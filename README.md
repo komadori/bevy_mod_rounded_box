@@ -11,7 +11,7 @@ This crate provides a rounded box shape for Bevy.
 
 ```toml
 [dependencies]
-bevy_mod_rounded_box = "0.8"
+bevy_mod_rounded_box = "0.9"
 ```
 
 ## Example
@@ -26,6 +26,7 @@ cargo run --example cube
 
 | This Version | Bevy version |
 |--------------|--------------|
+| 0.9.x        | 0.15.x       |
 | 0.8.x        | 0.14.x       |
 | 0.7.x        | 0.13.x       |
 | 0.6.x        | 0.12.x       |

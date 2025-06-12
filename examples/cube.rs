@@ -7,7 +7,6 @@ use bevy_mod_rounded_box::*;
 #[bevy_main]
 fn main() {
     App::new()
-        .insert_resource(Msaa::Sample4)
         .add_plugins(DefaultPlugins)
         .add_systems(Startup, setup)
         .add_systems(Update, rotate_cube)
@@ -51,34 +50,31 @@ fn setup(
     }
 
     // Spawn cube et al.
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(Plane3d::default().mesh().size(10.0, 10.0)),
-        material: materials.add(Color::srgb(0.3, 0.5, 0.3)),
-        transform: Transform::from_xyz(0.0, -2.0, 0.0),
-        ..default()
-    });
-    commands
-        .spawn(PbrBundle {
-            mesh: meshes.add(mesh),
-            material: materials.add(StandardMaterial {
-                base_color_texture: Some(asset_server.load("not_mirrored.png")),
-                ..Default::default()
-            }),
-            ..default()
-        })
-        .insert(TheCube);
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
+    commands.spawn((
+        Mesh3d(meshes.add(Plane3d::default().mesh().size(10.0, 10.0))),
+        MeshMaterial3d(materials.add(Color::srgb(0.3, 0.5, 0.3))),
+        Transform::from_xyz(0.0, -2.0, 0.0),
+    ));
+    commands.spawn((
+        Mesh3d(meshes.add(mesh)),
+        MeshMaterial3d(materials.add(StandardMaterial {
+            base_color_texture: Some(asset_server.load("not_mirrored.png")),
+            ..Default::default()
+        })),
+        TheCube,
+    ));
+    commands.spawn((
+        PointLight {
             shadows_enabled: true,
             ..default()
         },
-        transform: Transform::from_xyz(4.0, 8.0, 4.0),
-        ..default()
-    });
-    commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-        ..default()
-    });
+        Transform::from_xyz(4.0, 8.0, 4.0),
+    ));
+    commands.spawn((
+        Camera3d::default(),
+        Msaa::Sample4,
+        Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+    ));
 }
 
 fn rotate_cube(
@@ -87,16 +83,12 @@ fn rotate_cube(
     mut t: Local<f32>,
 ) {
     let ta = *t;
-    *t = (ta + 0.5 * timer.delta_seconds()) % TAU;
+    *t = (ta + 0.5 * timer.delta_secs()) % TAU;
     let tb = *t;
     let i1 = tb.cos() - ta.cos();
     let i2 = ta.sin() - tb.sin();
     for mut transform in cubes.iter_mut() {
-        transform.rotate(Quat::from_rotation_z(
-            TAU * 20.0 * i1 * timer.delta_seconds(),
-        ));
-        transform.rotate(Quat::from_rotation_y(
-            TAU * 20.0 * i2 * timer.delta_seconds(),
-        ));
+        transform.rotate(Quat::from_rotation_z(TAU * 20.0 * i1 * timer.delta_secs()));
+        transform.rotate(Quat::from_rotation_y(TAU * 20.0 * i2 * timer.delta_secs()));
     }
 }

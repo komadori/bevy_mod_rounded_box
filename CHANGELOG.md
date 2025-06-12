@@ -1,5 +1,10 @@
 # Changelog
 
+## bevy_mod_rounded_box 0.9.0 (2025-06-12)
+
+### Changed
+- Updated Bevy dependency to 0.15.
+
 ## bevy_mod_rounded_box 0.8.0 (2024-07-05)
 
 ### Changed

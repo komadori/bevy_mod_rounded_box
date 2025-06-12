@@ -198,7 +198,7 @@ impl PhysicalIndexer {
                         2 * half_subdivisions - corner_sector
                     };
                     let edge_len = mirrored_sector as f32 / half_subdivisions as f32;
-                    let edge_vec = if ((octant + 1) / 2) % 2 == 1 {
+                    let edge_vec = if octant.div_ceil(2) % 2 == 1 {
                         Vec2::new(edge_len, 1.0)
                     } else {
                         Vec2::new(1.0, edge_len)

@@ -620,11 +620,11 @@ mod tests {
                 [bx.to_bits(), by.to_bits(), bz.to_bits()],
                 [cx.to_bits(), cy.to_bits(), cz.to_bits()],
             ];
-            assert_eq!(set.insert(ps.clone()), true);
+            assert!(set.insert(ps));
             ps.rotate_left(1);
-            assert_eq!(set.insert(ps.clone()), true);
+            assert!(set.insert(ps));
             ps.rotate_left(1);
-            assert_eq!(set.insert(ps.clone()), true);
+            assert!(set.insert(ps));
         }
     }
 }

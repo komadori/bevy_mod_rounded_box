@@ -1,12 +1,10 @@
 use std::f32::consts::{PI, TAU};
 
 use bevy::{
+    asset::RenderAssetUsages,
+    mesh::{Indices, MeshVertexAttribute, PrimitiveTopology},
     prelude::*,
-    render::{
-        mesh::{Indices, MeshVertexAttribute, PrimitiveTopology},
-        render_asset::RenderAssetUsages,
-        render_resource::VertexFormat,
-    },
+    render::render_resource::VertexFormat,
 };
 
 #[derive(Copy, Clone)]
@@ -470,8 +468,7 @@ impl MeshBuilder for RoundedBoxMeshBuilder {
                         continue;
                     }
                     if (p_sector + (subdivisions + extra_levels) / 2 + 1)
-                        % (subdivisions + extra_levels)
-                        == 0
+                        .is_multiple_of(subdivisions + extra_levels)
                     {
                         continue;
                     }

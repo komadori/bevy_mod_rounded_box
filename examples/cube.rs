@@ -1,6 +1,6 @@
 use std::f32::consts::TAU;
 
-use bevy::{prelude::*, render::mesh::VertexAttributeValues};
+use bevy::{mesh::VertexAttributeValues, prelude::*};
 
 use bevy_mod_rounded_box::*;
 
